@@ -1,6 +1,7 @@
 import got, {
   ExtendOptions,
   Got,
+  HTTPError,
   OptionsOfJSONResponseBody,
   RequestError,
   TimeoutError,
@@ -57,6 +58,16 @@ export class HttpClientGot {
     this.askuiGot = got.extend(gotExtendOptions);
   }
 
+  /**
+   * Configures got with retry behavior for transient server errors.
+   *
+   * Got retries requests that fail with retryable status codes
+   * (500, 502, 503, 504, etc.) up to `limit` times using exponential backoff.
+   *
+   * POST requests are only retried if their URL is registered in `urlsToRetry`
+   * (see `shouldRetryOnError`), to avoid retrying non-idempotent calls
+   * to unknown endpoints.
+   */
   private buildGotExtendOptions(
     proxyAgents?: { http: http.Agent; https: https.Agent } | undefined,
   ): ExtendOptions {
@@ -142,6 +153,11 @@ export class HttpClientGot {
     return gotExtendOptions;
   }
 
+  /**
+   * Only retry POST requests if the URL is explicitly registered in `urlsToRetry`
+   * (populated by InferenceClient with inference endpoint URLs).
+   * Non-POST requests (GET, PUT, etc.) are always retried.
+   */
   private shouldRetryOnError(error: TimeoutError | RequestError): boolean {
     return (
       error.request?.options.method !== 'POST'
@@ -187,22 +203,39 @@ export class HttpClientGot {
     url: string,
     data: Record<string | number | symbol, unknown>,
   ): Promise<{ headers: http.IncomingHttpHeaders; body: T }> {
+    // Note: We intentionally do NOT set `throwHttpErrors: false` here.
+    // Got must throw on non-2xx responses so that its built-in retry mechanism
+    // (configured in buildGotExtendOptions) can kick in for transient server errors
+    // (500, 502, 503, 504). After all retries are exhausted, got throws an HTTPError
+    // which we catch below and convert into our custom error hierarchy.
     const options = this.injectHeadersAndCookies(url, {
       json: data,
       responseType: 'json',
-      throwHttpErrors: false,
     });
-    const { body, statusCode, headers } = await this.askuiGot.post<T>(
-      url,
-      options,
-    );
-    if (headers['deprecation'] !== undefined) {
-      logger.warn(headers['deprecation']);
+    try {
+      const { body, statusCode, headers } = await this.askuiGot.post<T>(
+        url,
+        options,
+      );
+      if (headers['deprecation'] !== undefined) {
+        logger.warn(headers['deprecation']);
+      }
+      if (statusCode !== 200) {
+        throw httpClientErrorHandler(statusCode, JSON.stringify(body));
+      }
+      return { body, headers };
+    } catch (error) {
+      // After got exhausts all retries, it throws HTTPError.
+      // Convert it to our custom error types (ServerHttpClientError,
+      // AuthenticationHttpClientError, etc.) for consistent error handling.
+      if (error instanceof HTTPError) {
+        throw httpClientErrorHandler(
+          error.response.statusCode,
+          error.response.body as string,
+        );
+      }
+      throw error;
     }
-    if (statusCode !== 200) {
-      throw httpClientErrorHandler(statusCode, JSON.stringify(body));
-    }
-    return { body, headers };
   }
 
   async get<T>(
