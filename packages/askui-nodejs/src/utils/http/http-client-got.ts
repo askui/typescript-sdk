@@ -12,6 +12,7 @@ import https from 'https';
 import { logger } from '../../lib';
 import { Credentials } from './credentials';
 import { httpClientErrorHandler } from './custom-errors';
+import { UnkownHttpClientError } from './custom-errors/unkown-http-client-error';
 
 function buildRetryLog(
   requestUrl: string | undefined,
@@ -231,7 +232,9 @@ export class HttpClientGot {
           error.response.body as string,
         );
       }
-      throw error;
+      throw new UnkownHttpClientError(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
