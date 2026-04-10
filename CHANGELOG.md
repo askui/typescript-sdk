@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.0](https://github.com/askui/askui/compare/v0.31.0...v0.32.0) (2026-04-10)
+
+
+### Features
+
+* add SBOM generation and release workflow ([c097334](https://github.com/askui/askui/commit/c097334a9232d1ac645d243192689b4aaa4dbc16))
+
+
+### Bug Fixes
+
+* **http-client:** enable got retry for transient server errors on POST requests (#SOLENG-333) ([0b13b3a](https://github.com/askui/askui/commit/0b13b3afb3212315028ba83b18bda7804387d9bd)), closes [#SOLENG-333](https://github.com/askui/askui/issues/SOLENG-333)
+* **http-client:** wrap unexpected errors in UnkownHttpClientError (#SOLENG-333) ([365be54](https://github.com/askui/askui/commit/365be54bc890cd5a7c252197f7b841f0536cebe0)), closes [#SOLENG-333](https://github.com/askui/askui/issues/SOLENG-333)
+
 ## [0.31.0](https://github.com/askui/askui/compare/v0.30.0...v0.31.0) (2025-12-12)
 
 
