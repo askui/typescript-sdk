@@ -213,15 +213,12 @@ export class HttpClientGot {
       responseType: 'json',
     });
     try {
-      const { body, statusCode, headers } = await this.askuiGot.post<T>(
+      const { body, headers } = await this.askuiGot.post<T>(
         url,
         options,
       );
       if (headers['deprecation'] !== undefined) {
         logger.warn(headers['deprecation']);
-      }
-      if (statusCode !== 200) {
-        throw httpClientErrorHandler(statusCode, JSON.stringify(body));
       }
       return { body, headers };
     } catch (error) {
