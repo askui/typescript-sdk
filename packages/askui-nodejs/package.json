@@ -102,7 +102,7 @@
         "lint-staged": "15.5.2",
         "proxy": "^1.0.2",
         "proxy-agent": "^6.3.0",
-        "release-it": "20.0.0",
+        "release-it": "^20.0.1",
         "shx": "0.3.4",
         "ts-jest": "29.2.5",
         "typescript": "5.6.2"
@@ -115,6 +115,6 @@
     },
     "overrides": {
         "tmp": "0.2.5",
-        "basic-ftp": "5.3.0"
+        "basic-ftp": "5.3.1"
     }
 }
