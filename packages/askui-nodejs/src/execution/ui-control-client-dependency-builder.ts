@@ -15,6 +15,7 @@ import { StepReporter } from '../core/reporting';
 import { readCredentials } from './read-credentials';
 import { LinearRetryStrategy } from './retry-strategies/linear-retry-strategy';
 import { CacheManager, DummyCacheManager } from '../core/cache';
+import { logger } from '../lib/logger';
 
 export class UiControlClientDependencyBuilder {
   private static async buildHttpClient(
@@ -60,7 +61,7 @@ export class UiControlClientDependencyBuilder {
     if (clientArgs.runtime === 'android') {
       return new AndroidAdbClient(clientArgs.android);
     }
-    return new AgentOsClient(clientArgs.uiControllerUrl);
+    return new AgentOsClient(clientArgs.agentOsUrl);
   }
 
   static async build(clientArgs: ClientArgsWithDefaults): Promise<{
@@ -87,8 +88,15 @@ export class UiControlClientDependencyBuilder {
   static async getClientArgsWithDefaults(
     clientArgs: ClientArgs,
   ): Promise<ClientArgsWithDefaults> {
+    if (clientArgs.uiControllerUrl !== undefined && clientArgs.agentOsUrl === undefined) {
+      logger.warn(
+        "'uiControllerUrl' is deprecated and will be removed in a future release. "
+        + "Use 'agentOsUrl' instead.",
+      );
+    }
     return {
       ...clientArgs,
+      agentOsUrl: clientArgs.agentOsUrl ?? clientArgs.uiControllerUrl ?? 'localhost:26000',
       aiElementArgs: {
         additionalLocations: clientArgs.aiElementArgs?.additionalLocations ?? [],
         onLocationNotExist: clientArgs.aiElementArgs?.onLocationNotExist ?? 'error',
@@ -102,7 +110,6 @@ export class UiControlClientDependencyBuilder {
         clientArgs.inferenceServerUrl ?? 'https://inference.askui.com',
       proxyAgents: clientArgs.proxyAgents ?? (await envProxyAgents()),
       runtime: clientArgs.runtime ?? 'desktop',
-      uiControllerUrl: clientArgs.uiControllerUrl ?? 'localhost:23000',
     };
   }
 }

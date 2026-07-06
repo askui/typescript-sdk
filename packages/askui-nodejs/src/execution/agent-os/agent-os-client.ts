@@ -1,6 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { Action, ControlCommand, InputEvent } from '../../core/ui-control-commands';
@@ -55,9 +54,9 @@ interface ActionRequest {
  * `localhost:26000` when managed by the AskUI OS service (`AskuiCoreService`).
  */
 export class AgentOsClient implements DeviceClient {
-  private static readonly SERVICE_MANAGED_ADDRESS = 'localhost:26000';
+  private static readonly INSTALLATION_DOCS_URL = 'https://docs.askui.com/06-agent-os/installation/service';
 
-  private static readonly DEFAULT_PORT = '23000';
+  private static readonly DEFAULT_PORT = '26000';
 
   private static readonly REQUEST_TIMEOUT_IN_MS = 30000;
 
@@ -117,34 +116,6 @@ export class AgentOsClient implements DeviceClient {
       return address;
     }
     return `${address}:${AgentOsClient.DEFAULT_PORT}`;
-  }
-
-  /**
-   * Checks whether the AgentOS is managed by the AskUI OS service
-   * (`AskuiCoreService`, Windows only). In that case the service occupies the
-   * controller session on the default port and clients have to connect to the
-   * service-managed address instead.
-   */
-  private static async isServiceManaged(): Promise<boolean> {
-    if (process.platform !== 'win32') {
-      return false;
-    }
-    return new Promise((resolve) => {
-      execFile('sc', ['query', 'AskuiCoreService'], (error, stdout) => {
-        resolve(!error && /RUNNING/.test(stdout));
-      });
-    });
-  }
-
-  private async getCandidateAddresses(): Promise<string[]> {
-    const address = AgentOsClient.normalizeAddress(this.url);
-    if (
-      address.endsWith(`:${AgentOsClient.DEFAULT_PORT}`)
-      && await AgentOsClient.isServiceManaged()
-    ) {
-      return [AgentOsClient.SERVICE_MANAGED_ADDRESS, address];
-    }
-    return [address];
   }
 
   private static async openChannel(address: string): Promise<grpc.Client> {
@@ -219,31 +190,25 @@ export class AgentOsClient implements DeviceClient {
 
   async connect(): Promise<UiControllerClientConnectionState> {
     this.connectionState = UiControllerClientConnectionState.CONNECTING;
-    const candidateAddresses = await this.getCandidateAddresses();
-    const errors: string[] = [];
-    /* eslint-disable no-await-in-loop, no-restricted-syntax */
-    for (const address of candidateAddresses) {
-      try {
-        this.client = await AgentOsClient.openChannel(address);
-        this.address = address;
-        await this.startSession();
-        this.connectionState = UiControllerClientConnectionState.CONNECTED;
-        logger.debug(`Connected to AgentOS at ${address}`);
-        return this.connectionState;
-      } catch (error) {
-        errors.push(`"${address}": ${error}`);
-        this.client?.close();
-        this.client = undefined;
-        this.address = undefined;
-      }
+    const address = AgentOsClient.normalizeAddress(this.url);
+    try {
+      this.client = await AgentOsClient.openChannel(address);
+      this.address = address;
+      await this.startSession();
+      this.connectionState = UiControllerClientConnectionState.CONNECTED;
+      logger.debug(`Connected to AgentOS at ${address}`);
+      return this.connectionState;
+    } catch (error) {
+      this.connectionState = UiControllerClientConnectionState.ERROR;
+      this.client?.close();
+      this.client = undefined;
+      this.address = undefined;
+      throw new AgentOsError(
+        `Connection to the AskUI AgentOS at "${address}" cannot be established. `
+        + 'Make sure the AskUI AgentOS is installed and running. '
+        + `Install it from ${AgentOsClient.INSTALLATION_DOCS_URL}. Cause: ${error}`,
+      );
     }
-    /* eslint-enable no-await-in-loop, no-restricted-syntax */
-    this.connectionState = UiControllerClientConnectionState.ERROR;
-    throw new AgentOsError(
-      'Connection to the AskUI AgentOS cannot be established. '
-      + 'Make sure the AskUI AgentOS is installed and running. '
-      + `Tried: ${errors.join('; ')}`,
-    );
   }
 
   private async startSession(): Promise<void> {

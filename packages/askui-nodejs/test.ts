@@ -31,7 +31,7 @@ import {
 } from './src/core/ui-control-commands';
 import { UiControllerClientConnectionState } from './src/execution/ui-controller-client-connection-state';
 
-const AGENT_OS_URL = process.env['AGENT_OS_URL'] ?? 'localhost:23000';
+const AGENT_OS_URL = process.env['AGENT_OS_URL'] ?? 'localhost:26000';
 const SKIP_INPUT = process.env['SKIP_INPUT'] === '1';
 const SCREENSHOT_PATH = path.join(__dirname, 'agentos-test-screenshot.png');
 

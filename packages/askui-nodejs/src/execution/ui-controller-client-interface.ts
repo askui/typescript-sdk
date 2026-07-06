@@ -30,11 +30,13 @@ export interface ContextArgs {
 /**
  * Configuration options for AskUI's UiControlClient.
  *
- * @property {string} [uiControllerUrl] - Default: `'localhost:23000'`. The gRPC address of
+ * @property {string} [agentOsUrl] - Default: `'localhost:26000'`. The gRPC address of
  *    the AskUI AgentOS (AskUI Remote Device Controller) that interacts with the operating
- *    system, e.g., simulating input events and capturing screenshots. When the AgentOS is
- *    managed by the AskUI OS service (`AskuiCoreService`), it listens on `localhost:26000`
- *    instead, which is tried automatically as a fallback if the default address is used.
+ *    system, e.g., simulating input events and capturing screenshots. `localhost:26000` is
+ *    the address of the AgentOS managed by the AskUI OS service (`AskuiCoreService`); set it
+ *    to `localhost:23000` to connect to a standalone AgentOS instead.
+ * @property {string} [uiControllerUrl] - **Deprecated.** Use {@link agentOsUrl} instead. Kept
+ *    for backwards compatibility: used only when `agentOsUrl` is not set.
  * @property {string} [inferenceServerUrl] - Default: `'https://inference.askui.com'`.
  *    Address of the AskUI's inference server which is responsible for understanding the
  *    screenshots and extracting data from them and returning commands for the UiController.
@@ -63,13 +65,17 @@ export interface ContextArgs {
  * @property {AIElementArgs} [aiElementArgs] - Options for configuring how AI elements are
  *   collected.
  * @property {Runtime} [runtime] - Default: `'desktop'`. The runtime to automate. `'desktop'`
- *   connects to the AskUI AgentOS via gRPC (see `uiControllerUrl`); `'android'` automates an
+ *   connects to the AskUI AgentOS via gRPC (see `agentOsUrl`); `'android'` automates an
  *   Android device directly via `adb` (see `android`).
  * @property {AndroidAdbClientArgs} [android] - Optional. Options for the Android runtime, e.g.
  *   the device serial (`id`) or the `adb` path (`adbPath`). Only used when `runtime` is
  *   `'android'`.
  */
 export interface ClientArgs {
+  readonly agentOsUrl?: string
+  /**
+   * @deprecated Use {@link agentOsUrl} instead. Used only when `agentOsUrl` is not set.
+   */
   readonly uiControllerUrl?: string
   readonly runtime?: Runtime
   readonly android?: AndroidAdbClientArgs
@@ -87,7 +93,7 @@ export interface ClientArgs {
 }
 
 export interface ClientArgsWithDefaults extends ClientArgs {
-  readonly uiControllerUrl: string
+  readonly agentOsUrl: string
   readonly runtime: Runtime
   readonly inferenceServerUrl: string
   readonly context: Context
