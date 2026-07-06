@@ -1,6 +1,6 @@
 import isCI from 'is-ci';
 import { HttpClientGot } from '../utils/http/http-client-got';
-import { UiControllerClient } from './ui-controller-client';
+import { AgentOsClient } from './agent-os/agent-os-client';
 import { InferenceClient } from './inference-client';
 import {
   ClientArgs,
@@ -52,10 +52,10 @@ export class UiControlClientDependencyBuilder {
     );
   }
 
-  private static buildUiControllerClient(
+  private static buildAgentOsClient(
     clientArgs: ClientArgsWithDefaults,
-  ): UiControllerClient {
-    return new UiControllerClient(clientArgs.uiControllerUrl);
+  ): AgentOsClient {
+    return new AgentOsClient(clientArgs.uiControllerUrl);
   }
 
   static async build(clientArgs: ClientArgsWithDefaults): Promise<{
@@ -63,13 +63,13 @@ export class UiControlClientDependencyBuilder {
     stepReporter: StepReporter;
     workspaceId: string | undefined;
   }> {
-    const uiControllerClient = UiControlClientDependencyBuilder.buildUiControllerClient(clientArgs);
+    const agentOsClient = UiControlClientDependencyBuilder.buildAgentOsClient(clientArgs);
     const inferenceClient = await UiControlClientDependencyBuilder.buildInferenceClient(clientArgs);
     const stepReporter = new StepReporter(clientArgs.reporter);
     const workspaceId = clientArgs.credentials?.workspaceId;
     return {
       executionRuntime: new ExecutionRuntime(
-        uiControllerClient,
+        agentOsClient,
         inferenceClient,
         stepReporter,
         clientArgs.retryStrategy ?? new LinearRetryStrategy(),
@@ -96,8 +96,7 @@ export class UiControlClientDependencyBuilder {
       inferenceServerUrl:
         clientArgs.inferenceServerUrl ?? 'https://inference.askui.com',
       proxyAgents: clientArgs.proxyAgents ?? (await envProxyAgents()),
-      uiControllerUrl: clientArgs.uiControllerUrl ?? 'http://127.0.0.1:6769',
-
+      uiControllerUrl: clientArgs.uiControllerUrl ?? 'localhost:23000',
     };
   }
 }

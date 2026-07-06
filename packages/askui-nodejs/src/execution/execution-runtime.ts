@@ -1,7 +1,7 @@
 import { BetaMessage, BetaMessageParam } from '@anthropic-ai/sdk/resources/beta/messages';
 import { ControlCommand, ControlCommandCode } from '../core/ui-control-commands';
 import { CustomElement } from '../core/model/custom-element';
-import { UiControllerClient } from './ui-controller-client';
+import { AgentOsClient } from './agent-os/agent-os-client';
 import { RepeatError } from './repeat-error';
 import { delay } from './misc';
 import { InferenceClient } from './inference-client';
@@ -18,7 +18,7 @@ import { ModelCompositionBranch } from './model-composition-branch';
 
 export class ExecutionRuntime {
   constructor(
-    private uiControllerClient: UiControllerClient,
+    private agentOsClient: AgentOsClient,
     private inferenceClient: InferenceClient,
     private stepReporter: StepReporter,
     public retryStrategy: RetryStrategy,
@@ -26,31 +26,18 @@ export class ExecutionRuntime {
 
   async connect(): Promise<UiControllerClientConnectionState> {
     this.inferenceClient.cacheManager.loadFromFile();
-    return this.uiControllerClient.connect();
+    return this.agentOsClient.connect();
   }
 
   disconnect(): void {
     this.inferenceClient.cacheManager.saveToFile();
-    this.uiControllerClient.disconnect();
-  }
-
-  async startVideoRecording(): Promise<void> {
-    await this.uiControllerClient.startVideoRecording();
-  }
-
-  async stopVideoRecording(): Promise<void> {
-    await this.uiControllerClient.stopVideoRecording();
-  }
-
-  async readVideoRecording(): Promise<string> {
-    const response = await this.uiControllerClient.readVideoRecording();
-    return response.data.video;
+    this.agentOsClient.disconnect();
   }
 
   async requestControl(
     controlCommand: ControlCommand,
   ): Promise<void> {
-    await this.uiControllerClient.requestControl(controlCommand);
+    await this.agentOsClient.requestControl(controlCommand);
   }
 
   async executeInstruction(
@@ -154,8 +141,7 @@ export class ExecutionRuntime {
   }
 
   async getScreenshot(): Promise<string> {
-    const requestScreenshotResponse = await this.uiControllerClient.requestScreenshot();
-    return requestScreenshotResponse.data.image;
+    return this.agentOsClient.requestScreenshot();
   }
 
   private async buildSnapshot(instruction: Instruction): Promise<Snapshot> {
@@ -195,29 +181,15 @@ export class ExecutionRuntime {
     return controlCommand;
   }
 
-  async annotateInteractively() {
-    const annotationResponse = await this.annotateImage();
-    await this.uiControllerClient.annotateInteractively(
-      annotationResponse.detected_elements,
-      annotationResponse.image,
-    );
-  }
-
   async takeScreenshotIfImageisNotProvided(imagePath?: string): Promise<string> {
-    let base64Image = '';
     if (imagePath !== undefined) {
-      base64Image = (await Base64Image.fromPath(imagePath)).toString();
+      return (await Base64Image.fromPath(imagePath)).toString();
     }
-    if (imagePath === undefined) {
-      const screenshotResponse = await this.uiControllerClient.requestScreenshot();
-      base64Image = screenshotResponse.data.image;
-    }
-    return base64Image;
+    return this.agentOsClient.requestScreenshot();
   }
 
   async getStartingArguments(): Promise<Record<string, string | number | boolean>> {
-    const startingArgumentsResponse = await this.uiControllerClient.getStartingArguments();
-    return startingArgumentsResponse.data.arguments;
+    return this.agentOsClient.getStartingArguments();
   }
 
   async getDetectedElements(

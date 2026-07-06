@@ -34,12 +34,14 @@
         "askui-postinstall": "bin/askui-postinstall"
     },
     "scripts": {
-        "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json && npm run copyTemplate && npm run copyExampleProject",
+        "build": "shx rm -rf dist && tsc -p tsconfig.json && tsc -p tsconfig-cjs.json && npm run copyTemplate && npm run copyProto && npm run copyExampleProject",
         "copyTemplate": "shx cp -r src/core/annotation/template.html dist/cjs/core/annotation/ && shx cp -r src/core/annotation/template.html dist/esm/core/annotation/",
+        "copyProto": "shx mkdir -p dist/cjs/execution/agent-os/proto dist/esm/execution/agent-os/proto && shx cp src/execution/agent-os/proto/Controller_V1.proto dist/cjs/execution/agent-os/proto/ && shx cp src/execution/agent-os/proto/Controller_V1.proto dist/esm/execution/agent-os/proto/",
         "copyExampleProject": "shx cp  -r example_projects_templates/ dist/  && shx cp -r bin/* dist/",
         "lint": "eslint --cache --fix --max-warnings 0 \"./**/*.{js,ts}\"",
         "lint:staged": "lint-staged",
         "test": "cross-env NODE_EXTRA_CA_CERTS='test/proxy/certs/unit_test.pem' jest '/src'",
+        "test:agentos": "ts-node -T -P tsconfig-cjs.json test.ts",
         "postinstall": "node -e \"require('./bin/askui-postinstall')\"",
         "release:prerelease": "cross-env HUSKY=0 release-it --preRelease=next",
         "release": "cross-env HUSKY=0 release-it",
@@ -53,9 +55,10 @@
     ],
     "dependencies": {
         "@anthropic-ai/sdk": "0.53.0",
+        "@grpc/grpc-js": "^1.14.4",
+        "@grpc/proto-loader": "^0.8.1",
         "chalk": "4.1.1",
         "commander": "12.1.0",
-        "fkill": "7.2.1",
         "fs-extra": "11.2.0",
         "got": "11.8.6",
         "inquirer": "8.2.5",
@@ -69,8 +72,6 @@
         "pino-pretty": "11.2.2",
         "tough-cookie": "5.0.0",
         "url-join": "4.0.1",
-        "wait-port": "1.1.0",
-        "ws": "8.18.0",
         "yup": "1.4.0"
     },
     "devDependencies": {
@@ -88,7 +89,6 @@
         "@types/nunjucks": "3.2.6",
         "@types/url-join": "4.0.3",
         "@types/webrtc": "0.0.43",
-        "@types/ws": "8.5.12",
         "@typescript-eslint/eslint-plugin": "5.10.0",
         "@typescript-eslint/parser": "5.10.0",
         "cross-env": "^10.1.0",
@@ -105,6 +105,7 @@
         "release-it": "^20.0.1",
         "shx": "0.3.4",
         "ts-jest": "29.2.5",
+        "ts-node": "^10.9.2",
         "typescript": "5.6.2"
     },
     "lint-staged": {

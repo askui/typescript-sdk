@@ -1,5 +1,8 @@
-export { UiController } from './lib';
 export * from './execution';
+export { AgentOsClient } from './execution/agent-os/agent-os-client';
+export { AgentOsError } from './execution/agent-os/agent-os-error';
+export { AgentOsNotConnectedError } from './execution/agent-os/agent-os-not-connected-error';
+export { AgentOsActionNotSupportedError } from './execution/agent-os/agent-os-action-not-supported-error';
 export {
   Instruction,
   Reporter,

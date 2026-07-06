@@ -23,9 +23,11 @@ export interface ContextArgs {
 /**
  * Configuration options for AskUI's UiControlClient.
  *
- * @property {string} [uiControllerUrl] - Default: `'http://127.0.0.1:6769'`. The address of
- *    AskUI's UiController that interacts with the operating system, e.g., simulating input
- *    events and capturing screenshots.
+ * @property {string} [uiControllerUrl] - Default: `'localhost:23000'`. The gRPC address of
+ *    the AskUI AgentOS (AskUI Remote Device Controller) that interacts with the operating
+ *    system, e.g., simulating input events and capturing screenshots. When the AgentOS is
+ *    managed by the AskUI OS service (`AskuiCoreService`), it listens on `localhost:26000`
+ *    instead, which is tried automatically as a fallback if the default address is used.
  * @property {string} [inferenceServerUrl] - Default: `'https://inference.askui.com'`.
  *    Address of the AskUI's inference server which is responsible for understanding the
  *    screenshots and extracting data from them and returning commands for the UiController.
