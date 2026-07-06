@@ -1,7 +1,7 @@
 import { BetaMessage, BetaMessageParam } from '@anthropic-ai/sdk/resources/beta/messages';
 import { ControlCommand, ControlCommandCode } from '../core/ui-control-commands';
 import { CustomElement } from '../core/model/custom-element';
-import { AgentOsClient } from './agent-os/agent-os-client';
+import { DeviceClient } from './device-client';
 import { RepeatError } from './repeat-error';
 import { delay } from './misc';
 import { InferenceClient } from './inference-client';
@@ -18,7 +18,7 @@ import { ModelCompositionBranch } from './model-composition-branch';
 
 export class ExecutionRuntime {
   constructor(
-    private agentOsClient: AgentOsClient,
+    private deviceClient: DeviceClient,
     private inferenceClient: InferenceClient,
     private stepReporter: StepReporter,
     public retryStrategy: RetryStrategy,
@@ -26,18 +26,18 @@ export class ExecutionRuntime {
 
   async connect(): Promise<UiControllerClientConnectionState> {
     this.inferenceClient.cacheManager.loadFromFile();
-    return this.agentOsClient.connect();
+    return this.deviceClient.connect();
   }
 
   disconnect(): void {
     this.inferenceClient.cacheManager.saveToFile();
-    this.agentOsClient.disconnect();
+    this.deviceClient.disconnect();
   }
 
   async requestControl(
     controlCommand: ControlCommand,
   ): Promise<void> {
-    await this.agentOsClient.requestControl(controlCommand);
+    await this.deviceClient.requestControl(controlCommand);
   }
 
   async executeInstruction(
@@ -141,7 +141,7 @@ export class ExecutionRuntime {
   }
 
   async getScreenshot(): Promise<string> {
-    return this.agentOsClient.requestScreenshot();
+    return this.deviceClient.requestScreenshot();
   }
 
   private async buildSnapshot(instruction: Instruction): Promise<Snapshot> {
@@ -185,11 +185,11 @@ export class ExecutionRuntime {
     if (imagePath !== undefined) {
       return (await Base64Image.fromPath(imagePath)).toString();
     }
-    return this.agentOsClient.requestScreenshot();
+    return this.deviceClient.requestScreenshot();
   }
 
   async getStartingArguments(): Promise<Record<string, string | number | boolean>> {
-    return this.agentOsClient.getStartingArguments();
+    return this.deviceClient.getStartingArguments();
   }
 
   async getDetectedElements(

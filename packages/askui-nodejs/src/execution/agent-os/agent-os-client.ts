@@ -11,6 +11,7 @@ import { delay } from '../misc';
 import { AgentOsError } from './agent-os-error';
 import { AgentOsNotConnectedError } from './agent-os-not-connected-error';
 import { AgentOsActionNotSupportedError } from './agent-os-action-not-supported-error';
+import { DeviceClient } from '../device-client';
 
 interface RunRecordedActionResponse {
   actionID: number;
@@ -53,7 +54,7 @@ interface ActionRequest {
  * The AgentOS listens on `localhost:23000` when running standalone and on
  * `localhost:26000` when managed by the AskUI OS service (`AskuiCoreService`).
  */
-export class AgentOsClient {
+export class AgentOsClient implements DeviceClient {
   private static readonly SERVICE_MANAGED_ADDRESS = 'localhost:26000';
 
   private static readonly DEFAULT_PORT = '23000';

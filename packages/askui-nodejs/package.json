@@ -42,6 +42,7 @@
         "lint:staged": "lint-staged",
         "test": "cross-env NODE_EXTRA_CA_CERTS='test/proxy/certs/unit_test.pem' jest '/src'",
         "test:agentos": "ts-node -T -P tsconfig-cjs.json test.ts",
+        "test:android": "ts-node -T -P tsconfig-cjs.json test-android.ts",
         "postinstall": "node -e \"require('./bin/askui-postinstall')\"",
         "release:prerelease": "cross-env HUSKY=0 release-it --preRelease=next",
         "release": "cross-env HUSKY=0 release-it",

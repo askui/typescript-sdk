@@ -6,6 +6,13 @@ import { Context } from './context';
 import { RetryStrategy } from './retry-strategies/retry-strategy';
 import { AIElementArgs } from '../core/ai-element/ai-elements-args';
 import { CacheConfig } from '../core/cache';
+import { AndroidAdbClientArgs } from './android/android-adb-client';
+
+/**
+ * The runtime AskUI automates: the `desktop` via the AskUI AgentOS (gRPC), or an
+ * `android` device directly via `adb`.
+ */
+export type Runtime = 'desktop' | 'android';
 
 /**
  * Context object to provide additional information about the context of (test) automation.
@@ -55,9 +62,17 @@ export interface ContextArgs {
  *    errors or network issues, improving the reliability of interactions with the server.
  * @property {AIElementArgs} [aiElementArgs] - Options for configuring how AI elements are
  *   collected.
+ * @property {Runtime} [runtime] - Default: `'desktop'`. The runtime to automate. `'desktop'`
+ *   connects to the AskUI AgentOS via gRPC (see `uiControllerUrl`); `'android'` automates an
+ *   Android device directly via `adb` (see `android`).
+ * @property {AndroidAdbClientArgs} [android] - Optional. Options for the Android runtime, e.g.
+ *   the device serial (`id`) or the `adb` path (`adbPath`). Only used when `runtime` is
+ *   `'android'`.
  */
 export interface ClientArgs {
   readonly uiControllerUrl?: string
+  readonly runtime?: Runtime
+  readonly android?: AndroidAdbClientArgs
   readonly inferenceServerUrl?: string
   readonly credentials?: CredentialArgs | undefined
   readonly proxyAgents?: ProxyAgentArgs | undefined
@@ -73,6 +88,7 @@ export interface ClientArgs {
 
 export interface ClientArgsWithDefaults extends ClientArgs {
   readonly uiControllerUrl: string
+  readonly runtime: Runtime
   readonly inferenceServerUrl: string
   readonly context: Context
   readonly inferenceServerApiVersion: string

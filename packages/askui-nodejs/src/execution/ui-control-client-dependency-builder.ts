@@ -1,6 +1,8 @@
 import isCI from 'is-ci';
 import { HttpClientGot } from '../utils/http/http-client-got';
 import { AgentOsClient } from './agent-os/agent-os-client';
+import { AndroidAdbClient } from './android/android-adb-client';
+import { DeviceClient } from './device-client';
 import { InferenceClient } from './inference-client';
 import {
   ClientArgs,
@@ -52,9 +54,12 @@ export class UiControlClientDependencyBuilder {
     );
   }
 
-  private static buildAgentOsClient(
+  private static buildDeviceClient(
     clientArgs: ClientArgsWithDefaults,
-  ): AgentOsClient {
+  ): DeviceClient {
+    if (clientArgs.runtime === 'android') {
+      return new AndroidAdbClient(clientArgs.android);
+    }
     return new AgentOsClient(clientArgs.uiControllerUrl);
   }
 
@@ -63,13 +68,13 @@ export class UiControlClientDependencyBuilder {
     stepReporter: StepReporter;
     workspaceId: string | undefined;
   }> {
-    const agentOsClient = UiControlClientDependencyBuilder.buildAgentOsClient(clientArgs);
+    const deviceClient = UiControlClientDependencyBuilder.buildDeviceClient(clientArgs);
     const inferenceClient = await UiControlClientDependencyBuilder.buildInferenceClient(clientArgs);
     const stepReporter = new StepReporter(clientArgs.reporter);
     const workspaceId = clientArgs.credentials?.workspaceId;
     return {
       executionRuntime: new ExecutionRuntime(
-        agentOsClient,
+        deviceClient,
         inferenceClient,
         stepReporter,
         clientArgs.retryStrategy ?? new LinearRetryStrategy(),
@@ -96,6 +101,7 @@ export class UiControlClientDependencyBuilder {
       inferenceServerUrl:
         clientArgs.inferenceServerUrl ?? 'https://inference.askui.com',
       proxyAgents: clientArgs.proxyAgents ?? (await envProxyAgents()),
+      runtime: clientArgs.runtime ?? 'desktop',
       uiControllerUrl: clientArgs.uiControllerUrl ?? 'localhost:23000',
     };
   }

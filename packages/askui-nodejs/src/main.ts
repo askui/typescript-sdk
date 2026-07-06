@@ -1,8 +1,14 @@
 export * from './execution';
+export { DeviceClient } from './execution/device-client';
 export { AgentOsClient } from './execution/agent-os/agent-os-client';
 export { AgentOsError } from './execution/agent-os/agent-os-error';
 export { AgentOsNotConnectedError } from './execution/agent-os/agent-os-not-connected-error';
 export { AgentOsActionNotSupportedError } from './execution/agent-os/agent-os-action-not-supported-error';
+export { AndroidAdbClient, AndroidAdbClientArgs, AndroidKeyboardMode } from './execution/android/android-adb-client';
+export { AndroidError } from './execution/android/android-error';
+export { NoAndroidDeviceError } from './execution/android/no-android-device-error';
+export { AndroidNotConnectedError } from './execution/android/android-not-connected-error';
+export { Runtime, ClientArgs } from './execution/ui-controller-client-interface';
 export {
   Instruction,
   Reporter,
