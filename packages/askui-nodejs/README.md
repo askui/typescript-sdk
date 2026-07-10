@@ -1,5 +1,11 @@
 # AskUI - What Can Be Said Can Be Solved
 
+> [!IMPORTANT]
+> **Maintenance mode.** This library is in maintenance mode and is no longer under
+> active development — only critical bug and security fixes are applied. It will be
+> **deprecated at the end of 2026**. For new projects and continued development, use
+> the [AskUI Python SDK](https://github.com/askui/vision-agent).
+
 **AskUI** allows you to automate the interaction with an application, multiple applications or even the entire operating system. 
 You can use this to write end-to-end tests or automate any kind of application.
 
