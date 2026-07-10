@@ -84,7 +84,7 @@ export class UiControlClient extends ApiCommands {
   }
 
   /**
-   * Connects to the askui UI Controller.
+   * Connects to the AskUI AgentOS.
    */
   async connect(): Promise<UiControllerClientConnectionState> {
     const connectionState = await this.executionRuntime.connect();
@@ -94,31 +94,19 @@ export class UiControlClient extends ApiCommands {
   }
 
   /**
-   * Disconnects from the askui UI Controller.
+   * Disconnects from the AskUI AgentOS.
    */
   disconnect(): void {
     this.executionRuntime.disconnect();
   }
 
   /**
-   * Disconnects from the askui UI Controller.
+   * Disconnects from the AskUI AgentOS.
    *
    * @deprecated Use {@link disconnect} instead.
    */
   close(): void {
     this.disconnect();
-  }
-
-  async startVideoRecording(): Promise<void> {
-    await this.executionRuntime.startVideoRecording();
-  }
-
-  async stopVideoRecording(): Promise<void> {
-    await this.executionRuntime.stopVideoRecording();
-  }
-
-  async readVideoRecording(): Promise<string> {
-    return this.executionRuntime.readVideoRecording();
   }
 
   private shouldAnnotateAfterCommandExecution(error?: Error): boolean {
@@ -175,14 +163,6 @@ export class UiControlClient extends ApiCommands {
       annotationRequest.fileNamePrefix,
     );
     return annotation;
-  }
-
-  async annotateInteractively(): Promise<void> {
-    try {
-      await this.executionRuntime.annotateInteractively();
-    } catch (err) {
-      logger.error(err);
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -1143,22 +1123,14 @@ export class UiControlClient extends ApiCommands {
   }
 
   /**
-   * Retrieves the starting arguments used when the controller server was initialized.
+   * Retrieves information about the AgentOS connection.
    *
-   * Useful for debugging, logging, or verifying the current server configuration.
+   * Useful for debugging, logging, or verifying the current configuration.
    *
-   * @property {string} displayNum - Display number controlled by the controller
-   * @property {boolean} minimize - Whether controller starts minimized
-   * @property {string} runtime - Runtime type ("desktop" or "android")
-   * @property {number} port - Communication port
-   * @property {number} actionWaitTime - Action wait time
+   * @property {number} displayNum - Display controlled by the AgentOS
+   * @property {string} runtime - Runtime type (always "desktop")
+   * @property {string} port - Communication port
    * @property {string} host - Host address
-   * @property {string} logFile - Log file path
-   * @property {boolean} hideOverlay - Whether overlay is hidden
-   * @property {boolean} debugDraw - Whether debug drawing is enabled
-   * @property {string} deviceId - Android device ID
-   * @property {string} configFile - Configuration file path
-   * @property {string} logLevel - Logging level
    *
    * @example
    * ```typescript
@@ -1166,29 +1138,14 @@ export class UiControlClient extends ApiCommands {
    * console.log(startingArguments);
    * // Output example:
    * // {
-   * //   displayNum: 0,
-   * //   minimize: true,
+   * //   displayNum: 1,
+   * //   host: 'localhost',
+   * //   port: '23000',
    * //   runtime: 'desktop',
-   * //   port: 5000,
-   * //   actionWaitTime: 1000,
-   * //   host: '127.0.0.1',
-   * //   logFile: '/tmp/askui/askui-server.log',
-   * //   hideOverlay: false,
-   * //   debugDraw: false,
-   * //   deviceId: 'emulator-5554',
-   * //   configFile: '/tmp/askui/askui-config.json',
-   * //   logLevel: 'info',
    * // }
   * ```
-  *
-  * @example Retrieving Android device ID:
-  * ```typescript
-  * const startingArguments = await aui.getControllerStartingArguments();
-  * console.log(startingArguments.deviceId);
-  * // Output example: "emulator-5554"
-  * ```
   */
-  async getControllerStartingArguments(): Promise<Record<'displayNum' | 'minimize' | 'runtime' | 'port' | 'actionWaitTime' | 'host' | 'logFile' | 'hideOverlay' | 'debugDraw' | 'deviceId' | 'configFile' | 'logLevel', string | number | boolean>> {
+  async getControllerStartingArguments(): Promise<Record<string, string | number | boolean>> {
     return this.executionRuntime.getStartingArguments();
   }
 }

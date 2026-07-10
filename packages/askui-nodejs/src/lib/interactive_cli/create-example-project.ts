@@ -118,8 +118,6 @@ export class CreateExampleProject {
   private async addReporterConfig() {
     this.helperTemplateConfig['allure_stepreporter_import'] = "import { AskUIAllureStepReporter } from '@askui/askui-reporters';";
     this.helperTemplateConfig['reporter_placeholder'] = 'reporter: new AskUIAllureStepReporter(),';
-    this.helperTemplateConfig['allure_stepreporter_attach_video'] = `const video = await aui.readVideoRecording();
-  await AskUIAllureStepReporter.attachVideo(video);`;
   }
 
   private async addAskuiRunCommand() {

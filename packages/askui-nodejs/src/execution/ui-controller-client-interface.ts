@@ -6,6 +6,32 @@ import { Context } from './context';
 import { RetryStrategy } from './retry-strategies/retry-strategy';
 import { AIElementArgs } from '../core/ai-element/ai-elements-args';
 import { CacheConfig } from '../core/cache';
+import { AndroidAdbClientArgs } from './android/android-adb-client';
+import { LegacyAndroidClientArgs } from './legacy-controller/legacy-android-client';
+
+/**
+ * The runtime AskUI automates: the `desktop` via the AskUI AgentOS (gRPC), or an
+ * `android` device (see {@link AndroidArgs} for the transport).
+ */
+export type Runtime = 'desktop' | 'android';
+
+/**
+ * How the Android runtime reaches the device.
+ * - `legacy-controller` (default): connect to a running AskUI legacy UI Controller
+ *   over WebSocket (`AskUI-StartController ... -r android`).
+ * - `adb`: drive the device directly via `adb` (no controller process required).
+ */
+export type AndroidTransport = 'legacy-controller' | 'adb';
+
+/**
+ * Options for the Android runtime. `transport` selects how the device is reached;
+ * the remaining options apply to the matching transport (`controllerUrl` for
+ * `legacy-controller`; `id`/`adbPath`/`keyboard` for `adb`; `actionDelayInMs` for
+ * both).
+ */
+export interface AndroidArgs extends AndroidAdbClientArgs, LegacyAndroidClientArgs {
+  readonly transport?: AndroidTransport;
+}
 
 /**
  * Context object to provide additional information about the context of (test) automation.
@@ -23,9 +49,13 @@ export interface ContextArgs {
 /**
  * Configuration options for AskUI's UiControlClient.
  *
- * @property {string} [uiControllerUrl] - Default: `'http://127.0.0.1:6769'`. The address of
- *    AskUI's UiController that interacts with the operating system, e.g., simulating input
- *    events and capturing screenshots.
+ * @property {string} [agentOsUrl] - Default: `'localhost:26000'`. The gRPC address of
+ *    the AskUI AgentOS (AskUI Remote Device Controller) that interacts with the operating
+ *    system, e.g., simulating input events and capturing screenshots. `localhost:26000` is
+ *    the address of the AgentOS managed by the AskUI OS service (`AskuiCoreService`); set it
+ *    to `localhost:23000` to connect to a standalone AgentOS instead.
+ * @property {string} [uiControllerUrl] - **Deprecated.** Use {@link agentOsUrl} instead. Kept
+ *    for backwards compatibility: used only when `agentOsUrl` is not set.
  * @property {string} [inferenceServerUrl] - Default: `'https://inference.askui.com'`.
  *    Address of the AskUI's inference server which is responsible for understanding the
  *    screenshots and extracting data from them and returning commands for the UiController.
@@ -53,9 +83,22 @@ export interface ContextArgs {
  *    errors or network issues, improving the reliability of interactions with the server.
  * @property {AIElementArgs} [aiElementArgs] - Options for configuring how AI elements are
  *   collected.
+ * @property {Runtime} [runtime] - Default: `'desktop'`. The runtime to automate. `'desktop'`
+ *   connects to the AskUI AgentOS via gRPC (see `agentOsUrl`); `'android'` automates an
+ *   Android device (see `android`).
+ * @property {AndroidArgs} [android] - Optional. Options for the Android runtime. `transport`
+ *   selects how the device is reached (`'legacy-controller'` by default, or `'adb'`);
+ *   `controllerUrl` configures the legacy controller address, `id`/`adbPath`/`keyboard` the
+ *   adb transport. Only used when `runtime` is `'android'`.
  */
 export interface ClientArgs {
+  readonly agentOsUrl?: string
+  /**
+   * @deprecated Use {@link agentOsUrl} instead. Used only when `agentOsUrl` is not set.
+   */
   readonly uiControllerUrl?: string
+  readonly runtime?: Runtime
+  readonly android?: AndroidArgs
   readonly inferenceServerUrl?: string
   readonly credentials?: CredentialArgs | undefined
   readonly proxyAgents?: ProxyAgentArgs | undefined
@@ -70,7 +113,8 @@ export interface ClientArgs {
 }
 
 export interface ClientArgsWithDefaults extends ClientArgs {
-  readonly uiControllerUrl: string
+  readonly agentOsUrl: string
+  readonly runtime: Runtime
   readonly inferenceServerUrl: string
   readonly context: Context
   readonly inferenceServerApiVersion: string

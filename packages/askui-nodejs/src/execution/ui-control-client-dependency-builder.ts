@@ -1,6 +1,9 @@
 import isCI from 'is-ci';
 import { HttpClientGot } from '../utils/http/http-client-got';
-import { UiControllerClient } from './ui-controller-client';
+import { AgentOsClient } from './agent-os/agent-os-client';
+import { AndroidAdbClient } from './android/android-adb-client';
+import { LegacyAndroidClient } from './legacy-controller/legacy-android-client';
+import { DeviceClient } from './device-client';
 import { InferenceClient } from './inference-client';
 import {
   ClientArgs,
@@ -13,6 +16,7 @@ import { StepReporter } from '../core/reporting';
 import { readCredentials } from './read-credentials';
 import { LinearRetryStrategy } from './retry-strategies/linear-retry-strategy';
 import { CacheManager, DummyCacheManager } from '../core/cache';
+import { logger } from '../lib/logger';
 
 export class UiControlClientDependencyBuilder {
   private static async buildHttpClient(
@@ -52,10 +56,17 @@ export class UiControlClientDependencyBuilder {
     );
   }
 
-  private static buildUiControllerClient(
+  private static buildDeviceClient(
     clientArgs: ClientArgsWithDefaults,
-  ): UiControllerClient {
-    return new UiControllerClient(clientArgs.uiControllerUrl);
+  ): DeviceClient {
+    if (clientArgs.runtime === 'android') {
+      const android = clientArgs.android ?? {};
+      if ((android.transport ?? 'legacy-controller') === 'adb') {
+        return new AndroidAdbClient(android);
+      }
+      return new LegacyAndroidClient(android);
+    }
+    return new AgentOsClient(clientArgs.agentOsUrl);
   }
 
   static async build(clientArgs: ClientArgsWithDefaults): Promise<{
@@ -63,13 +74,13 @@ export class UiControlClientDependencyBuilder {
     stepReporter: StepReporter;
     workspaceId: string | undefined;
   }> {
-    const uiControllerClient = UiControlClientDependencyBuilder.buildUiControllerClient(clientArgs);
+    const deviceClient = UiControlClientDependencyBuilder.buildDeviceClient(clientArgs);
     const inferenceClient = await UiControlClientDependencyBuilder.buildInferenceClient(clientArgs);
     const stepReporter = new StepReporter(clientArgs.reporter);
     const workspaceId = clientArgs.credentials?.workspaceId;
     return {
       executionRuntime: new ExecutionRuntime(
-        uiControllerClient,
+        deviceClient,
         inferenceClient,
         stepReporter,
         clientArgs.retryStrategy ?? new LinearRetryStrategy(),
@@ -82,8 +93,15 @@ export class UiControlClientDependencyBuilder {
   static async getClientArgsWithDefaults(
     clientArgs: ClientArgs,
   ): Promise<ClientArgsWithDefaults> {
+    if (clientArgs.uiControllerUrl !== undefined && clientArgs.agentOsUrl === undefined) {
+      logger.warn(
+        "'uiControllerUrl' is deprecated and will be removed in a future release. "
+        + "Use 'agentOsUrl' instead.",
+      );
+    }
     return {
       ...clientArgs,
+      agentOsUrl: clientArgs.agentOsUrl ?? clientArgs.uiControllerUrl ?? 'localhost:26000',
       aiElementArgs: {
         additionalLocations: clientArgs.aiElementArgs?.additionalLocations ?? [],
         onLocationNotExist: clientArgs.aiElementArgs?.onLocationNotExist ?? 'error',
@@ -96,8 +114,7 @@ export class UiControlClientDependencyBuilder {
       inferenceServerUrl:
         clientArgs.inferenceServerUrl ?? 'https://inference.askui.com',
       proxyAgents: clientArgs.proxyAgents ?? (await envProxyAgents()),
-      uiControllerUrl: clientArgs.uiControllerUrl ?? 'http://127.0.0.1:6769',
-
+      runtime: clientArgs.runtime ?? 'desktop',
     };
   }
 }
