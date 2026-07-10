@@ -2,6 +2,7 @@ import isCI from 'is-ci';
 import { HttpClientGot } from '../utils/http/http-client-got';
 import { AgentOsClient } from './agent-os/agent-os-client';
 import { AndroidAdbClient } from './android/android-adb-client';
+import { LegacyAndroidClient } from './legacy-controller/legacy-android-client';
 import { DeviceClient } from './device-client';
 import { InferenceClient } from './inference-client';
 import {
@@ -59,7 +60,11 @@ export class UiControlClientDependencyBuilder {
     clientArgs: ClientArgsWithDefaults,
   ): DeviceClient {
     if (clientArgs.runtime === 'android') {
-      return new AndroidAdbClient(clientArgs.android);
+      const android = clientArgs.android ?? {};
+      if ((android.transport ?? 'legacy-controller') === 'adb') {
+        return new AndroidAdbClient(android);
+      }
+      return new LegacyAndroidClient(android);
     }
     return new AgentOsClient(clientArgs.agentOsUrl);
   }

@@ -73,6 +73,7 @@
         "pino-pretty": "11.2.2",
         "tough-cookie": "5.0.0",
         "url-join": "4.0.1",
+        "ws": "^8.18.0",
         "yup": "1.4.0"
     },
     "devDependencies": {
@@ -90,6 +91,7 @@
         "@types/nunjucks": "3.2.6",
         "@types/url-join": "4.0.3",
         "@types/webrtc": "0.0.43",
+        "@types/ws": "^8.5.12",
         "@typescript-eslint/eslint-plugin": "5.10.0",
         "@typescript-eslint/parser": "5.10.0",
         "cross-env": "^10.1.0",

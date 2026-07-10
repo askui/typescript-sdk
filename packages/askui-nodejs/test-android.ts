@@ -1,26 +1,36 @@
 /* eslint-disable no-console */
 /**
- * Manual end-to-end test for the Android adb client.
+ * Manual end-to-end test for the Android device clients.
  *
- * Requires:
- *   - `adb` on PATH (or set ADB_PATH),
- *   - a connected/authorized Android device or emulator (`adb devices`),
- *   - for the typing step with Unicode: ADBKeyboard installed and set as the
- *     default IME (set KEYBOARD=adb-keyboard). Otherwise `input text` is used.
+ * Two transports (select with TRANSPORT):
+ *   - adb (TRANSPORT=adb): needs `adb` on PATH (or ADB_PATH) and a connected
+ *     device (`adb devices`).
+ *   - legacy-controller (default): needs the AskUI legacy UI Controller running
+ *     in Android mode (`AskUI-StartController ... -r android`).
+ *
+ * For the typing step with Unicode: ADBKeyboard installed and set as the default
+ * IME (adb transport: set KEYBOARD=adb-keyboard).
  *
  * Run with:
- *   npm run test:android
+ *   npm run test:android                 # legacy controller (default)
+ *   TRANSPORT=adb npm run test:android   # direct adb
  *
  * Environment variables:
- *   ADB_PATH=/path/to/adb   Override the adb executable.
- *   DEVICE_ID=emulator-5554 Select a specific device (default: first).
- *   KEYBOARD=adb-keyboard   Use the ADBKeyboard IME for Unicode typing.
- *   SKIP_INPUT=1            Only connect/screenshot/info, skip input actions.
+ *   TRANSPORT=adb|legacy-controller  Select the transport (default legacy-controller).
+ *   CONTROLLER_URL=ws://127.0.0.1:6769  Legacy controller address.
+ *   ADB_PATH=/path/to/adb            Override the adb executable.
+ *   DEVICE_ID=emulator-5554          Select a specific device (adb, default: first).
+ *   KEYBOARD=adb-keyboard            Use the ADBKeyboard IME for Unicode typing (adb).
+ *   SKIP_INPUT=1                     Only connect/screenshot/info, skip input actions.
  */
 import fs from 'fs';
 import path from 'path';
 import { AndroidAdbClient } from './src/execution/android/android-adb-client';
 import { AndroidError } from './src/execution/android/android-error';
+import { AndroidNotConnectedError } from './src/execution/android/android-not-connected-error';
+import { LegacyAndroidClient } from './src/execution/legacy-controller/legacy-android-client';
+import { LegacyControllerNotConnectedError } from './src/execution/legacy-controller/legacy-controller-not-connected-error';
+import { DeviceClient } from './src/execution/device-client';
 import {
   Action,
   ControlCommand,
@@ -30,6 +40,7 @@ import {
 import { UiControllerClientConnectionState } from './src/execution/ui-controller-client-connection-state';
 
 const SKIP_INPUT = process.env['SKIP_INPUT'] === '1';
+const TRANSPORT = process.env['TRANSPORT'] === 'adb' ? 'adb' : 'legacy-controller';
 const SCREENSHOT_PATH = path.join(__dirname, 'android-test-screenshot.png');
 
 interface StepResult {
@@ -72,15 +83,24 @@ function printSummary(): void {
   console.log(`${passed}/${results.length} steps passed`);
 }
 
+function buildClient(): DeviceClient {
+  if (TRANSPORT === 'adb') {
+    return new AndroidAdbClient({
+      ...(process.env['ADB_PATH'] ? { adbPath: process.env['ADB_PATH'] } : {}),
+      ...(process.env['DEVICE_ID'] ? { id: process.env['DEVICE_ID'] } : {}),
+      keyboard: process.env['KEYBOARD'] === 'adb-keyboard' ? 'adb-keyboard' : 'input-text',
+    });
+  }
+  return new LegacyAndroidClient({
+    ...(process.env['CONTROLLER_URL'] ? { controllerUrl: process.env['CONTROLLER_URL'] } : {}),
+  });
+}
+
 async function main(): Promise<void> {
-  console.log('Android adb client end-to-end test');
+  console.log(`Android end-to-end test (transport: ${TRANSPORT})`);
   console.log('='.repeat(60));
 
-  const client = new AndroidAdbClient({
-    ...(process.env['ADB_PATH'] ? { adbPath: process.env['ADB_PATH'] } : {}),
-    ...(process.env['DEVICE_ID'] ? { id: process.env['DEVICE_ID'] } : {}),
-    keyboard: process.env['KEYBOARD'] === 'adb-keyboard' ? 'adb-keyboard' : 'input-text',
-  });
+  const client = buildClient();
   const execute = (...actions: Action[]) => client.requestControl(
     new ControlCommand(ControlCommandCode.OK, actions),
   );
@@ -88,7 +108,7 @@ async function main(): Promise<void> {
   let screenWidth = 0;
   let screenHeight = 0;
 
-  const connected = await step('connect (adb device discovery)', async () => {
+  const connected = await step(`connect (${TRANSPORT})`, async () => {
     const state = await client.connect();
     if (state !== UiControllerClientConnectionState.CONNECTED) {
       throw new AndroidError(`Unexpected connection state: ${state}`);
@@ -174,11 +194,14 @@ async function main(): Promise<void> {
   });
 
   await step('requests after disconnect are rejected', async () => {
+    const ExpectedError = TRANSPORT === 'adb'
+      ? AndroidNotConnectedError
+      : LegacyControllerNotConnectedError;
     try {
       await client.requestScreenshot();
     } catch (error) {
-      if (error instanceof AndroidError) {
-        return 'threw AndroidNotConnectedError as expected';
+      if (error instanceof ExpectedError) {
+        return `threw ${error.name} as expected`;
       }
       throw error;
     }

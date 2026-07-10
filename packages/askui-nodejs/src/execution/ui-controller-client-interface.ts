@@ -7,12 +7,31 @@ import { RetryStrategy } from './retry-strategies/retry-strategy';
 import { AIElementArgs } from '../core/ai-element/ai-elements-args';
 import { CacheConfig } from '../core/cache';
 import { AndroidAdbClientArgs } from './android/android-adb-client';
+import { LegacyAndroidClientArgs } from './legacy-controller/legacy-android-client';
 
 /**
  * The runtime AskUI automates: the `desktop` via the AskUI AgentOS (gRPC), or an
- * `android` device directly via `adb`.
+ * `android` device (see {@link AndroidArgs} for the transport).
  */
 export type Runtime = 'desktop' | 'android';
+
+/**
+ * How the Android runtime reaches the device.
+ * - `legacy-controller` (default): connect to a running AskUI legacy UI Controller
+ *   over WebSocket (`AskUI-StartController ... -r android`).
+ * - `adb`: drive the device directly via `adb` (no controller process required).
+ */
+export type AndroidTransport = 'legacy-controller' | 'adb';
+
+/**
+ * Options for the Android runtime. `transport` selects how the device is reached;
+ * the remaining options apply to the matching transport (`controllerUrl` for
+ * `legacy-controller`; `id`/`adbPath`/`keyboard` for `adb`; `actionDelayInMs` for
+ * both).
+ */
+export interface AndroidArgs extends AndroidAdbClientArgs, LegacyAndroidClientArgs {
+  readonly transport?: AndroidTransport;
+}
 
 /**
  * Context object to provide additional information about the context of (test) automation.
@@ -66,10 +85,11 @@ export interface ContextArgs {
  *   collected.
  * @property {Runtime} [runtime] - Default: `'desktop'`. The runtime to automate. `'desktop'`
  *   connects to the AskUI AgentOS via gRPC (see `agentOsUrl`); `'android'` automates an
- *   Android device directly via `adb` (see `android`).
- * @property {AndroidAdbClientArgs} [android] - Optional. Options for the Android runtime, e.g.
- *   the device serial (`id`) or the `adb` path (`adbPath`). Only used when `runtime` is
- *   `'android'`.
+ *   Android device (see `android`).
+ * @property {AndroidArgs} [android] - Optional. Options for the Android runtime. `transport`
+ *   selects how the device is reached (`'legacy-controller'` by default, or `'adb'`);
+ *   `controllerUrl` configures the legacy controller address, `id`/`adbPath`/`keyboard` the
+ *   adb transport. Only used when `runtime` is `'android'`.
  */
 export interface ClientArgs {
   readonly agentOsUrl?: string
@@ -78,7 +98,7 @@ export interface ClientArgs {
    */
   readonly uiControllerUrl?: string
   readonly runtime?: Runtime
-  readonly android?: AndroidAdbClientArgs
+  readonly android?: AndroidArgs
   readonly inferenceServerUrl?: string
   readonly credentials?: CredentialArgs | undefined
   readonly proxyAgents?: ProxyAgentArgs | undefined

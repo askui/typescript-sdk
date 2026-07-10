@@ -8,7 +8,12 @@ export { AndroidAdbClient, AndroidAdbClientArgs, AndroidKeyboardMode } from './e
 export { AndroidError } from './execution/android/android-error';
 export { NoAndroidDeviceError } from './execution/android/no-android-device-error';
 export { AndroidNotConnectedError } from './execution/android/android-not-connected-error';
-export { Runtime, ClientArgs } from './execution/ui-controller-client-interface';
+export { LegacyAndroidClient, LegacyAndroidClientArgs } from './execution/legacy-controller/legacy-android-client';
+export { LegacyControllerError } from './execution/legacy-controller/legacy-controller-error';
+export { LegacyControllerNotConnectedError } from './execution/legacy-controller/legacy-controller-not-connected-error';
+export {
+  Runtime, AndroidTransport, AndroidArgs, ClientArgs,
+} from './execution/ui-controller-client-interface';
 export {
   Instruction,
   Reporter,
