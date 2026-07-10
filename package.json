@@ -42,13 +42,13 @@
     "devDependencies": {
         "@commitlint/cli": "19.7.1",
         "@commitlint/config-conventional": "16.0.0",
-        "commitizen": "4.2.5",
+        "commitizen": "^4.2.4",
         "cz-conventional-changelog": "3.3.0",
         "husky": "7.0.4",
         "is-ci": "3.0.1",
         "jira-prepare-commit-msg": "1.6.2",
         "pinst": "2.1.6",
-        "zx": "7.2.3"
+        "zx": "^8.8.5"
     },
     "jira-prepare-commit-msg": {
         "isConventionalCommit": true,
