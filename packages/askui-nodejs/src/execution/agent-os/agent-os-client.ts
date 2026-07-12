@@ -90,7 +90,7 @@ export class AgentOsClient implements DeviceClient {
 
   private displayId = 1;
 
-  constructor(public url: string) {}
+  constructor(public url: string, private useHttpProxy: boolean = false) {}
 
   private static buildControllerApiConstructor(): grpc.ServiceClientConstructor {
     const packageDefinition = protoLoader.loadSync(
@@ -118,9 +118,17 @@ export class AgentOsClient implements DeviceClient {
     return `${address}:${AgentOsClient.DEFAULT_PORT}`;
   }
 
-  private static async openChannel(address: string): Promise<grpc.Client> {
+  private static async openChannel(
+    address: string,
+    useHttpProxy: boolean,
+  ): Promise<grpc.Client> {
     const ControllerApi = AgentOsClient.buildControllerApiConstructor();
     const client = new ControllerApi(address, grpc.credentials.createInsecure(), {
+      // By default, the AgentOS (local or remote) is reached directly because
+      // grpc-js would otherwise honor grpc_proxy/https_proxy and corporate
+      // proxies generally cannot tunnel gRPC (CONNECT answered with
+      // redirects/auth pages). Opt in via the `agentOsUseProxy` client arg.
+      'grpc.enable_http_proxy': useHttpProxy ? 1 : 0,
       'grpc.max_receive_message_length': 2 ** 30,
       'grpc.max_send_message_length': 2 ** 30,
     });
@@ -192,7 +200,7 @@ export class AgentOsClient implements DeviceClient {
     this.connectionState = UiControllerClientConnectionState.CONNECTING;
     const address = AgentOsClient.normalizeAddress(this.url);
     try {
-      this.client = await AgentOsClient.openChannel(address);
+      this.client = await AgentOsClient.openChannel(address, this.useHttpProxy);
       this.address = address;
       await this.startSession();
       this.connectionState = UiControllerClientConnectionState.CONNECTED;

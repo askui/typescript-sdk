@@ -66,7 +66,7 @@ export class UiControlClientDependencyBuilder {
       }
       return new LegacyAndroidClient(android);
     }
-    return new AgentOsClient(clientArgs.agentOsUrl);
+    return new AgentOsClient(clientArgs.agentOsUrl, clientArgs.agentOsUseProxy);
   }
 
   static async build(clientArgs: ClientArgsWithDefaults): Promise<{
@@ -102,6 +102,7 @@ export class UiControlClientDependencyBuilder {
     return {
       ...clientArgs,
       agentOsUrl: clientArgs.agentOsUrl ?? clientArgs.uiControllerUrl ?? 'localhost:26000',
+      agentOsUseProxy: clientArgs.agentOsUseProxy ?? false,
       aiElementArgs: {
         additionalLocations: clientArgs.aiElementArgs?.additionalLocations ?? [],
         onLocationNotExist: clientArgs.aiElementArgs?.onLocationNotExist ?? 'error',
