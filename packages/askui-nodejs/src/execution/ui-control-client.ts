@@ -25,8 +25,7 @@ import { Instruction, StepReporter } from '../core/reporting';
 import { AIElementCollection } from '../core/ai-element/ai-element-collection';
 import { ModelCompositionBranch } from './model-composition-branch';
 import { AIElementArgs } from '../core/ai-element/ai-elements-args';
-import { NoRetryStrategy, RetryStrategy } from './retry-strategies';
-import { ControlCommandError } from './control-command-error';
+import { FixedRetryStrategy, RetryStrategy } from './retry-strategies';
 import { AskUIAgent, AgentHistory, ActOptions } from '../core/models/anthropic';
 import { AskUIGetAskUIElementTool, AskUIListAIElementTool } from '../core/models/anthropic/tools/askui-api-tools';
 
@@ -509,37 +508,13 @@ export class UiControlClient extends ApiCommands {
    * @param {number} maxTry - Number of maximum retries
    * @param {number} waitTime - Time in milliseconds
    */
-  async waitUntil(AskUICommand: Executable, maxTry = 5, waitTime = 2000) {
-    logger.debug(`waitUntil: Starting with maxTry=${maxTry}, waitTime=${waitTime}ms, retryStrategy=${this.executionRuntime.retryStrategy.constructor.name}`);
-
-    const userDefinedStrategy = this.executionRuntime.retryStrategy;
-    this.executionRuntime.retryStrategy = new NoRetryStrategy();
-
-    const attempt = async (retriesLeft: number): Promise<void> => {
-      const attemptNumber = maxTry - retriesLeft;
-      logger.debug(`waitUntil: Attempt ${attemptNumber}/${maxTry} (${retriesLeft} retries remaining)`);
-      try {
-        await AskUICommand.exec();
-        logger.debug(`waitUntil: Command succeeded on attempt ${attemptNumber}/${maxTry}`);
-        return;
-      } catch (error: unknown) {
-        if (error instanceof ControlCommandError && retriesLeft > 0) {
-          logger.debug(`waitUntil: ControlCommandError on attempt ${attemptNumber}/${maxTry}, waiting ${waitTime}ms before retry.`, error);
-          await this.waitFor(waitTime).exec();
-          await attempt(retriesLeft - 1);
-          return;
-        }
-        const errorName = error instanceof Error ? error.name : 'Error';
-        logger.debug(`waitUntil: ${errorName} on attempt ${attemptNumber}/${maxTry}, no retries remaining.`, error);
-        throw error;
-      }
-    };
-
-    try {
-      await attempt(maxTry - 1);
-    } finally {
-      this.executionRuntime.retryStrategy = userDefinedStrategy;
-    }
+  // eslint-disable-next-line class-methods-use-this
+  async waitUntil(AskUICommand: Executable, maxTry = 5, waitTime = 2000): Promise<void> {
+    logger.debug(`waitUntil: Starting with maxTry=${maxTry}, waitTime=${waitTime}ms`);
+    await AskUICommand.exec({
+      instructionPrefix: 'waitUntil: ',
+      retryStrategy: new FixedRetryStrategy(waitTime, maxTry - 1),
+    });
   }
 
   private evaluateRelation(
