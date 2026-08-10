@@ -56,6 +56,11 @@ export interface ContextArgs {
  *    to `localhost:23000` to connect to a standalone AgentOS instead.
  * @property {string} [uiControllerUrl] - **Deprecated.** Use {@link agentOsUrl} instead. Kept
  *    for backwards compatibility: used only when `agentOsUrl` is not set.
+ * @property {boolean} [agentOsUseProxy] - Default: `false`. By default, the gRPC connection to
+ *    the AgentOS is established directly, ignoring proxy environment variables such as
+ *    `grpc_proxy`, `https_proxy` and `http_proxy` (corporate HTTP proxies generally cannot
+ *    tunnel gRPC). Set to `true` to route the connection through the proxy configured in those
+ *    environment variables, e.g., when the AgentOS is only reachable through a proxy.
  * @property {string} [inferenceServerUrl] - Default: `'https://inference.askui.com'`.
  *    Address of the AskUI's inference server which is responsible for understanding the
  *    screenshots and extracting data from them and returning commands for the UiController.
@@ -97,6 +102,7 @@ export interface ClientArgs {
    * @deprecated Use {@link agentOsUrl} instead. Used only when `agentOsUrl` is not set.
    */
   readonly uiControllerUrl?: string
+  readonly agentOsUseProxy?: boolean
   readonly runtime?: Runtime
   readonly android?: AndroidArgs
   readonly inferenceServerUrl?: string
@@ -114,6 +120,7 @@ export interface ClientArgs {
 
 export interface ClientArgsWithDefaults extends ClientArgs {
   readonly agentOsUrl: string
+  readonly agentOsUseProxy: boolean
   readonly runtime: Runtime
   readonly inferenceServerUrl: string
   readonly context: Context
