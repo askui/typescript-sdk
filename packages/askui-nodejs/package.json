@@ -1,6 +1,6 @@
 {
     "name": "askui",
-    "version": "0.33.0",
+    "version": "0.34.0",
     "license": "MIT",
     "author": "askui GmbH <info@askui.com> (http://www.askui.com/)",
     "description": "Reliable, automated end-to-end-testing that depends on what is shown on your screen instead of the technology you are running on",
