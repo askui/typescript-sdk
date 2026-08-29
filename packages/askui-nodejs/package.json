@@ -87,7 +87,7 @@
         "@types/jsdom": "21.1.7",
         "@types/listr": "0.14.9",
         "@types/lodash": "^4.17.7",
-        "@types/node": "22.5.5",
+        "@types/node": "22.10.2",
         "@types/nunjucks": "3.2.6",
         "@types/url-join": "4.0.3",
         "@types/webrtc": "0.0.43",
